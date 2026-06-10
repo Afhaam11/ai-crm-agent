@@ -155,12 +155,8 @@ Campaigns are always created in `pending_approval` status. You must explicitly c
 
 ---
 
-## 📄 License
-
-MIT License — free to use, modify, and distribute.
-
----
-
 ## 🙋‍♂️ Author
 
-Built by [Afhaam Asief](https://github.com/your-username) · B.E. Computer Science & Engineering, MITE Moodabidri
+**Afhaam Ali**
+
+AI/ML Engineer | LLM Agents & Intelligent Automation
