@@ -1,162 +1,284 @@
-# 🤖 AI CRM Agent — Natural Language Customer Analytics & Email Campaigns
+<h1 align="center">Northstar CRM</h1>
 
-An AI-powered CRM backend that lets you query customer data in plain English, generate personalized email campaigns, and track delivery — all driven by a LangChain ReAct agent powered by Groq's LLaMA model.
+<p align="center">
+  <b>An AI CRM agent: ask your customer spreadsheet questions in plain language,<br>
+  then review and send personalized email campaigns.</b>
+</p>
+
+<p align="center">
+  <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
+  <img alt="DuckDB" src="https://img.shields.io/badge/DuckDB-FFF000?logo=duckdb&logoColor=black">
+  <img alt="LangChain" src="https://img.shields.io/badge/LangChain-1C3C3C">
+  <img alt="Groq" src="https://img.shields.io/badge/LLM-Groq-F55036">
+  <img alt="React 18" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black">
+</p>
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Northstar CRM demo: setting up a workspace, asking which customers have a warranty ending soon, and drafting a personalized email campaign" width="100%">
+</p>
+
+<p align="center">
+  <sub>A quick tour: set up a workspace, ask which customers have a warranty ending soon, then draft and review a personalized campaign.</sub>
+</p>
+
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#api">API</a> ·
+  <a href="#configuration">Configuration</a> ·
+  <a href="#project-structure">Project structure</a> ·
+  <a href="#limits-and-responsible-use">Limits</a>
+</p>
 
 ---
 
-## ✨ Features
+## Overview
 
-- 🔍 **Natural Language Querying** — Ask questions like *"Show me customers whose warranty expires in 30 days"* and get instant results
-- 🧠 **LLM-Powered SQL Generation** — Automatically converts your question into safe DuckDB SQL queries
-- 📧 **AI Email Campaign Generator** — Creates personalized email subject lines and body copy with `{{placeholder}}` support
-- ✅ **Approval Workflow** — Campaigns are staged for review before sending — no accidental blasts
-- 📊 **Audit Logging** — Every campaign and email delivery is logged to `.jsonl` files
-- 🔁 **Duplicate Prevention** — SHA-256 hash tracking prevents sending the same email twice
-- 📁 **Dynamic Excel Schema** — Works with any `.xlsx` file; auto-detects email and name columns
-- 💬 **Conversation Context** — Follow-up queries are aware of previous questions in the session
+Northstar CRM (the **AI CRM Agent**) turns a customer spreadsheet into something you can talk to. Upload an Excel or CSV file, ask a question such as "Who has a warranty ending in the next 30 days?", inspect the matching records, and export them or use them as the audience for an email campaign.
 
----
+The language model never writes SQL. It returns a structured JSON query plan, the application validates that plan against your spreadsheet's columns, and Python builds a parameterized, SELECT-only DuckDB query from it. Campaign emails are drafted by the model, previewed recipient by recipient, and only sent after you approve them.
 
-## 🛠️ Tech Stack
+## Features
 
-| Layer | Technology |
-|---|---|
-| LLM | [Groq](https://groq.com) — `llama-3.3-70b-versatile` |
-| Agent Framework | [LangChain](https://langchain.com) ReAct Agent |
-| Database | [DuckDB](https://duckdb.org) (in-memory) |
-| Data Handling | Pandas + OpenPyXL |
-| Email Sending | Python `smtplib` + Gmail SMTP |
-| Environment | `python-dotenv` |
-| Interface | Jupyter Notebook |
+- **Guided setup.** Enter your business name, description and contact details so email drafts sound like you, then add a spreadsheet now or later.
+- **CSV and Excel upload.** `.csv`, `.xlsx` and `.xls` files are loaded into an in-memory DuckDB table.
+- **Data profile.** Every field's type, distinct values, empty percentage, earliest and latest values and sample values. Email, name and date columns are detected automatically.
+- **Ask in plain language.** Results appear in a sortable, paginated table with a one-line reading of what was understood. Follow-up questions build on the previous query, and recent questions can be re-run in one click.
+- **See how the answer was found.** "Query details" shows the generated SQL (with a copy button) and a readable breakdown of the conditions, calculations, grouping and ordering.
+- **Export.** Download the latest results as CSV, Excel or JSON.
+- **Campaign drafts.** From the latest results, the model writes a subject and body with placeholders such as `{{Name}}` that are filled in per recipient. Preview every recipient's final email before anything is sent.
+- **Approval before sending.** Sending takes an explicit second confirmation, goes out through SendGrid, and ends with a summary of sent, failed, duplicate and skipped emails. Rows with a missing or invalid address are flagged and skipped.
+- **Audit trail.** Uploads, questions (with their plan, SQL and row count) and campaign events are written to a JSONL log and available from the API.
+- **Comfortable to use.** Light, dark and system themes, keyboard-friendly dialogs with a skip link, a bottom tab bar on phones, and reduced-motion support.
+- **Sample data included.** Two example spreadsheets, a quick-start PDF and a demo video ship with the app.
 
----
+## Quick start
 
-## 📁 Project Structure
+You need Python 3.10 or newer, Node.js 18 or newer and a [Groq API key](https://console.groq.com/keys). A SendGrid account is only needed if you want to send campaigns.
 
+**1. Backend**
+
+Windows (PowerShell):
+
+```powershell
+git clone https://github.com/Afhaam11/ai-crm-agent.git
+cd ai-crm-agent\backend
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
-CRM-Ai-main/
-├── AI_CRM_Agent_Backend.ipynb   # Main notebook — all logic here
-├── sales.xlsx                   # Sample customer data
-├── campaign_audit_log.jsonl     # Auto-generated campaign audit trail
-├── sent_emails_log.jsonl        # Auto-generated email delivery log
-└── .env                         # Your secrets (not committed)
-```
 
----
-
-## ⚙️ Setup & Installation
-
-### 1. Clone the repository
+macOS / Linux:
 
 ```bash
-git clone https://github.com/afhaam11/ai-crm-agent.git
-cd ai-crm-agent
+git clone https://github.com/Afhaam11/ai-crm-agent.git
+cd ai-crm-agent/backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-### 2. Install dependencies
-
-```bash
-pip install jupyter duckdb pandas openpyxl langchain langchain-groq langchain-core python-dotenv
-```
-
-### 3. Create a `.env` file or use `example.env` file
+Create `backend/.env` (you can start from `.env.example`):
 
 ```env
-GROQ_API_KEY=your_groq_api_key_here
-GMAIL_ADDRESS=youremail@gmail.com
-GMAIL_APP_PASSWORD=your_gmail_app_password
+GROQ_API_KEY=your_groq_api_key
+
+# Optional: only needed to send campaigns
+SENDGRID_API_KEY=your_sendgrid_api_key
+FROM_EMAIL=verified_sender@example.com
 ```
 
-> **Get a Groq API key:** Sign up free at [console.groq.com](https://console.groq.com)
->
-> **Get a Gmail App Password:** 
-
-### 4. Add your data
-
-Place your customer Excel file (`.xlsx`) in the project root. The system auto-detects any column with "email" in its name. A sample `sales.xlsx` is included.
-
-### 5. Launch Jupyter
+Start the API from inside `backend/`, because the modules and log paths are relative to it:
 
 ```bash
-jupyter notebook
+uvicorn server:app --reload    # http://localhost:8000
 ```
 
-Open `AI_CRM_Agent_Backend.ipynb` and run all cells.
+**2. Frontend** (in a second terminal)
 
----
-
-## 🚀 Quick Start
-
-```python
-from AI_CRM_Agent_Backend import init_crm, query_customers_direct, create_campaign_direct, preview_email_direct, send_campaign_direct
-
-# Initialize
-crm = init_crm(
-    org_name="Your Company",
-    org_description="What your company does",
-    excel_path="sales.xlsx"
-)
-
-# Query in plain English
-results = query_customers_direct(crm, "Show me customers from Bangalore who bought Samsung TVs")
-
-# Generate a campaign
-campaign = create_campaign_direct(
-    crm=crm,
-    query="Samsung TV buyers in Bangalore",
-    campaign_prompt="Offer them a 20% discount on extended warranty.",
-    recipients=results['data']
-)
-
-# Preview before sending
-preview = preview_email_direct(crm, campaign['campaign_id'], customer_index=0)
-print(preview['subject'])
-print(preview['body'])
-
-# Send when ready
-status = send_campaign_direct(crm, campaign['campaign_id'])
-print(status)
+```bash
+cd ai-crm-agent/frontend
+npm install
+npm start                      # http://localhost:3000
 ```
 
----
+The frontend talks to `http://localhost:8000` by default. Set `REACT_APP_API_URL` (for example in `frontend/.env`) to point it at another backend.
 
-## 🔄 Campaign Workflow
+**3. Try it**
+
+Open <http://localhost:3000>, enter your business details, then upload a sample spreadsheet from `frontend/public/` (or download one from the Home page):
+
+| File | Contents |
+| --- | --- |
+| `customer_sales_data.xlsx` | 500 customers with product, quantity, price, purchase date, shop location, warranty dates, customer type and sales rep |
+| `candidate_hr_data.xlsx` | 500 candidates with college, CGPA and results for each interview round |
+
+Then ask something like "Who has a warranty ending in the next 30 days?", "List customers in Mysuru who bought a smartwatch" or "How many customers are there in each shop location?", and use **Draft a campaign** on the results.
+
+## How it works
+
+### From question to records
+
+```mermaid
+flowchart LR
+    Q["Question in<br/>plain language"] --> P["LLM returns a JSON<br/>query plan (Groq)"]
+    P --> V["Pydantic validation +<br/>column-name check"]
+    V --> B["Python builds parameterized<br/>DuckDB SQL"]
+    B --> E["SELECT-only run on the<br/>in-memory table"]
+    E --> R["Records, SQL, plan<br/>and intent summary"]
+```
+
+A query plan can express four operations (`filter`, `aggregate`, `top_n`, `search`), 27 filter operators (text matching, comparisons, ranges, null checks, lists and date shortcuts such as `last_30_days`, `next_30_days` and `this_month`), `AND`/`OR` logic between filters, grouping, aggregations (`count`, `sum`, `avg`, `min`, `max`, `count_distinct`), sorting and a row limit.
+
+Several layers sit between the model and the data:
+
+1. The model must return JSON that matches the `QueryPlan` schema. Unknown operators or aggregations are rejected.
+2. Every column the plan mentions must exist in the uploaded spreadsheet, otherwise the error lists the available columns.
+3. Identifiers are quoted and filter values are passed as positional parameters (`$1`, `$2`, ...), never pasted into the SQL text.
+4. Only `SELECT` statements run, and data-changing keywords are refused.
+5. Results are capped at 500 rows by default and 5,000 at most.
+
+### From results to campaign
+
+```mermaid
+flowchart LR
+    D["Latest query<br/>results"] --> G["LLM drafts subject<br/>and body with placeholders"]
+    G --> PV["Per-recipient<br/>preview"]
+    PV --> A{"You approve?"}
+    A -->|yes| S["SendGrid sends one<br/>personalized email each"]
+    A -->|no| X["Stays a draft"]
+```
+
+The draft prompt includes your business name, description and contact details, and tells the model to use only columns that exist as placeholders and never to put a recipient's address in the body. A campaign is created as `pending_approval`; the backend refuses to send anything in another state. Sending skips rows without a valid address, skips an address already sent this campaign, and reports the totals.
+
+### What the model sees
+
+To plan a query, the model receives your question, the previous plan (for follow-ups), and a compact schema: column names, data types and up to three example values per column. To write a campaign draft it also receives the first three recipient rows. The full spreadsheet and the complete query results stay on your backend.
+
+### Stack
+
+| Layer | Tools |
+| --- | --- |
+| Frontend | React 18 (Create React App), Axios, CSS Modules |
+| Backend | FastAPI, Uvicorn, Pydantic, pandas, DuckDB (in memory) |
+| AI | LangChain with a Groq-hosted LLM for query planning and email drafting |
+| Email | SendGrid |
+| Deployment | Vercel (frontend), Render (backend) |
+
+## API
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Liveness, and whether the agent is initialized |
+| POST | `/api/init` | Create the agent: `org_name`, `org_description`, optional `support_number` and `email_id` |
+| POST | `/api/upload` | Upload a CSV or Excel file (multipart field `file`); returns the data profile |
+| GET | `/api/schema` | Data profile of the loaded spreadsheet |
+| POST | `/api/ask` | `{"question": "..."}` returns rows, columns, SQL, plan and intent summary |
+| POST | `/api/reset` | Clear the follow-up context |
+| POST | `/api/export` | `{"fmt": "csv" \| "excel" \| "json"}` returns the latest results as a file |
+| POST | `/api/campaign/create` | `{"context": "..."}` drafts a campaign from the latest results |
+| GET | `/api/campaign/{id}/preview` | Personalized preview, with `?recipient_index=0` |
+| POST | `/api/campaign/{id}/approve` | Send the campaign through SendGrid |
+| DELETE | `/api/campaign/{id}` | Delete a draft |
+| DELETE | `/api/dataset` | Remove the loaded spreadsheet |
+| GET | `/api/audit` | Audit entries, with `?event_type=` and `?last_n=50` |
+
+FastAPI also serves interactive docs at <http://localhost:8000/docs>. A short session:
+
+```bash
+curl -X POST http://localhost:8000/api/init \
+  -H "Content-Type: application/json" \
+  -d '{"org_name": "Juniper & Co.", "org_description": "We help independent shops keep their customers coming back."}'
+
+curl -X POST http://localhost:8000/api/upload -F "file=@customer_sales_data.xlsx"
+
+curl -X POST http://localhost:8000/api/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Who has a warranty ending in the next 30 days?"}'
+```
+
+Example `/api/ask` response, abridged (illustrative values):
+
+```json
+{
+  "intent_summary": "Find customers whose warranty expires within the next 30 days.",
+  "row_count": 5,
+  "columns": ["Name", "Email ID", "Product", "Warranty Expiry Date"],
+  "data": [
+    { "Name": "...", "Email ID": "...", "Product": "Smart TV", "Warranty Expiry Date": "2026-11-12T00:00:00" }
+  ],
+  "sql": "SELECT *\nFROM crm_data\nWHERE \"Warranty Expiry Date\" BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days'\nLIMIT 500",
+  "plan": {
+    "operation": "filter",
+    "filters": [
+      { "column": "Warranty Expiry Date", "operator": "next_30_days", "value": null, "value2": null, "logic": "AND" }
+    ],
+    "limit": 500,
+    "intent_summary": "Find customers whose warranty expires within the next 30 days."
+  }
+}
+```
+
+When a question cannot be turned into a valid plan, `/api/ask` answers with HTTP 422 and an `error` message (and the plan, if one was produced). Problems reaching Groq, a rejected key or rate limiting come back as HTTP 502 with a message that says what to check.
+
+## Configuration
+
+| Setting | Where | Default | Purpose |
+| --- | --- | --- | --- |
+| `GROQ_API_KEY` | `backend/.env` | none | Required. Without it, `/api/init` fails with "GROQ_API_KEY not configured". |
+| `SENDGRID_API_KEY`, `FROM_EMAIL` | `backend/.env` | none | Optional. Needed only to send campaigns, and `FROM_EMAIL` must be a sender verified in SendGrid. Without them you can still draft and preview. |
+| `REACT_APP_API_URL` | `frontend/.env` | `http://localhost:8000` | Backend URL used by the frontend |
+| `DEFAULT_MODEL`, `LLM_TEMPERATURE`, `LLM_MAX_TOKENS` | `backend/config.py` | temperature 0.0, 1024 tokens | Which Groq model to use and how |
+| `DEFAULT_QUERY_LIMIT`, `MAX_QUERY_LIMIT` | `backend/config.py` | 500, 5000 | Row caps per query |
+| CORS origins | `backend/server.py` | `localhost:3000`, `127.0.0.1:3000` and the Vercel deployment | Add your frontend's address when you host it elsewhere |
+
+The backend writes `crm_audit_log.jsonl` and an `exports/` folder in the directory it is started from. Both are git-ignored, as is `.env`. Build the frontend for production with `npm run build`.
+
+## Project structure
+
+<details>
+<summary><b>Show the folder layout</b></summary>
 
 ```
-Query Customers  →  Generate Campaign  →  Preview Email  →  Approve  →  Send  →  Audit Log
+.
+├── backend/
+│   ├── server.py                 FastAPI app and routes
+│   ├── crm_agent.py              ties together data, queries, campaigns and the audit log
+│   ├── query_plan.py             the QueryPlan model: everything the LLM is allowed to ask for
+│   ├── query_plan_generator.py   LLM call that returns a JSON plan
+│   ├── query_builder.py          validates a plan and builds parameterized SQL
+│   ├── query_executor.py         question, plan, SQL, result, with follow-up context
+│   ├── db_manager.py             in-memory DuckDB, SELECT-only guard, exports
+│   ├── schema_analyzer.py        column profiling and email, name and date detection
+│   ├── email_service.py          draft generation, personalization and SendGrid sending
+│   ├── audit_logger.py           JSONL audit trail
+│   ├── models.py                 dataclasses for organization, schema and campaign
+│   ├── config.py                 keys, model settings and limits
+│   ├── requirements.txt
+│   └── .env.example
+├── frontend/
+│   ├── public/                   sample spreadsheets, quick-start PDF, demo video
+│   ├── src/
+│   │   ├── components/           about, campaign, common, home, layout, query, schema
+│   │   ├── context/              app state and theme
+│   │   ├── services/api.js       Axios client for the backend
+│   │   └── styles/               design tokens and shared UI styles
+│   └── package.json
+└── README.md
 ```
 
-Campaigns are always created in `pending_approval` status. You must explicitly call `send_campaign_direct()` or the agent's `approve_and_send_campaign` tool to trigger delivery.
+</details>
 
----
+## Limits and responsible use
 
-## 🧰 Available Agent Tools
+- **One workspace per backend.** The backend keeps a single agent, spreadsheet and set of campaigns in memory, so it serves one business at a time and forgets everything on restart. The uploaded file sits in the server's temp folder until you remove the spreadsheet.
+- **No authentication.** Anyone who can reach the backend can use it. Do not expose a public backend that has live SendGrid keys, because anyone could then send email from your verified sender. For demos, leave the SendGrid keys unset: querying, drafting and previewing still work.
+- **Data leaves your server for the LLM.** Column names, a few example values per column and, for campaigns, three sample rows are sent to Groq (see [What the model sees](#what-the-model-sees)). Do not use data you are not allowed to share with that provider.
+- **Check the matches.** The model interprets your question, so use Query details to confirm the conditions before acting on a result, and read every draft before sending it.
+- **Email responsibly.** Only email people who have agreed to hear from you, and follow the rules that apply to you, such as CAN-SPAM or GDPR.
 
-| Tool | Description |
-|---|---|
-| `query_customers` | Natural language → SQL → customer records |
-| `get_schema_and_sample` | Inspect loaded data structure |
-| `generate_email_campaign` | AI-generated subject + body for a recipient list |
-| `preview_campaign` | Stage a manually written campaign |
-| `preview_customer_email` | See personalized email for a specific customer |
-| `approve_and_send_campaign` | Send a staged campaign |
-| `get_campaign_status` | Check sent/failed/duplicate counts |
-| `export_query_results` | Export last query to CSV, Excel, or JSON |
-| `get_audit_logs` | Retrieve campaign and email delivery logs |
+## Author
 
----
-
-## 🔐 Security Notes
-
-- Only `SELECT` queries are permitted — no `INSERT`, `UPDATE`, `DROP`, etc.
-- `.env` is in `.gitignore` — never commit your API keys
-- Email deduplication via SHA-256 hashing prevents accidental re-sends
-- All campaign activity is append-only logged to `.jsonl` files
-
----
-
-## 🙋‍♂️ Author
-
-**Afhaam Ali**
-
-AI/ML Engineer | LLM Agents & Intelligent Automation
+**Afhaam Asief Ali Muhammed**, AI/ML engineer.
+[LinkedIn](https://www.linkedin.com/in/muhammed-afhaam-a-23259b240) · [GitHub](https://github.com/afhaam11)

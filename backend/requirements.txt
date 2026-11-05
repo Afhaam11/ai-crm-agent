@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+python-dotenv
+python-multipart
+duckdb
+pandas
+openpyxl
+xlrd
+langchain
+langchain-groq
+groq
+sendgrid
+aiofiles
+httpx
+pydantic
+email-validator
